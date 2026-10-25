@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 440" width="640" height="440" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <style>
+    .bg    { fill: #0d1117; }
+    .box   { fill: #161b22; stroke: #30363d; }
+    .title { fill: #e6edf3; font-size: 15px; font-weight: 600; }
+    .sub   { fill: #9198a1; font-size: 12px; }
+    .pin   { fill: #e6edf3; font-size: 13px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+    .pinm  { fill: #6e7681; font-size: 13px; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+    .dot   { fill: #e6edf3; }
+    .dotm  { fill: #484f58; }
+    .w     { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .tx    { stroke: #f0883e; } .tx-t  { fill: #f0883e; }
+    .rx    { stroke: #4493f8; } .rx-t  { fill: #4493f8; }
+    .gnd   { stroke: #9198a1; } .gnd-t { fill: #9198a1; }
+    .pwr   { stroke: #f85149; } .pwr-t { fill: #f85149; }
+    .io0   { stroke: #3fb950; } .io0-t { fill: #3fb950; }
+    .rst   { stroke: #ab7df8; stroke-dasharray: 5 4; } .rst-t { fill: #ab7df8; }
+    .lbl   { font-size: 12px; font-weight: 600; }
+    .warn  { fill: #2b1a0e; stroke: #f0883e; }
+    .warn-t{ fill: #f0883e; font-size: 13px; font-weight: 600; }
+  </style>
+
+  <rect class="bg" width="640" height="440" rx="12"/>
+
+  <!-- 3.3 V supply -->
+  <rect class="box" x="24" y="30" width="200" height="120" rx="8"/>
+  <text class="title" x="40" y="56">3.3 V supply</text>
+  <text class="sub"   x="40" y="74">≥ 300 mA, e.g. ESP-01 adapter</text>
+  <text class="pin" x="160" y="110">3V3</text> <circle class="dot" cx="208" cy="106" r="4"/>
+  <text class="pin" x="160" y="138">GND</text> <circle class="dot" cx="208" cy="134" r="4"/>
+
+  <!-- USB-serial -->
+  <rect class="box" x="24" y="166" width="200" height="124" rx="8"/>
+  <text class="title" x="40" y="192">USB-serial</text>
+  <text class="sub"   x="40" y="210">FT232RL, 3.3 V logic</text>
+  <text class="pin" x="160" y="190">RX</text>  <circle class="dot" cx="208" cy="186" r="4"/>
+  <text class="pin" x="160" y="230">TX</text>  <circle class="dot" cx="208" cy="226" r="4"/>
+  <text class="pin" x="160" y="270">GND</text> <circle class="dot" cx="208" cy="266" r="4"/>
+
+  <!-- OakRemote header -->
+  <rect class="box" x="440" y="30" width="176" height="346" rx="8"/>
+  <text class="title" x="456" y="56">OakRemote header</text>
+  <text class="sub"   x="456" y="74">TYSW_012_ZK_MAIN_V1.1</text>
+  <circle class="dot"  cx="456" cy="106" r="4"/> <text class="pin"  x="470" y="110">3V3</text>
+  <circle class="dot"  cx="456" cy="146" r="4"/> <text class="pin"  x="470" y="150">RST</text>
+  <circle class="dot"  cx="456" cy="186" r="4"/> <text class="pin"  x="470" y="190">TXD</text>
+  <circle class="dot"  cx="456" cy="226" r="4"/> <text class="pin"  x="470" y="230">RXD</text>
+  <circle class="dot"  cx="456" cy="266" r="4"/> <text class="pin"  x="470" y="270">IO0</text>
+  <circle class="dotm" cx="456" cy="306" r="4"/> <text class="pinm" x="470" y="310">IO2 (unused)</text>
+  <circle class="dot"  cx="456" cy="346" r="4"/> <text class="pin"  x="470" y="350">GND</text>
+
+  <!-- power + data, straight across -->
+  <path class="w pwr" d="M212,106 H452"/>
+  <text class="lbl pwr-t" x="300" y="99">3V3 → 3V3</text>
+  <path class="w rx"  d="M212,186 H452"/>
+  <text class="lbl rx-t" x="300" y="179">RX ← TXD</text>
+  <path class="w tx"  d="M212,226 H452"/>
+  <text class="lbl tx-t" x="300" y="219">TX → RXD</text>
+
+  <!-- common ground (hops over RX/TX) -->
+  <path class="w gnd" d="M212,134 H256 V180 A6,6 0 0 1 256,192 V220 A6,6 0 0 1 256,232 V346 H452"/>
+  <path class="w gnd" d="M212,266 H256"/>
+  <circle class="dot" cx="256" cy="266" r="4"/>
+  <text class="lbl gnd-t" x="300" y="339">common GND</text>
+
+  <!-- IO0 bridge + RST tap -->
+  <path class="w io0" d="M452,266 C412,266 412,346 452,346"/>
+  <text class="lbl io0-t" x="300" y="292">IO0 → GND</text>
+  <text class="sub"       x="300" y="308">bridge = flash mode</text>
+  <path class="w rst" d="M404,146 H452"/>
+  <text class="lbl rst-t" x="300" y="143">tap RST to GND</text>
+  <text class="sub"       x="300" y="159">to reboot</text>
+
+  <!-- warning -->
+  <rect class="warn" x="24" y="392" width="592" height="32" rx="6" stroke-width="1.5"/>
+  <text class="warn-t" x="40" y="413">⚠ Leave the micro-USB EMPTY: its data pin is wired to RXD</text>
+</svg>

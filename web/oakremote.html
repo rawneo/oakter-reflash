@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Theatre Remote</title>
+<meta name="description" content="Learn and test IR codes on a Tasmota-flashed OakRemote.">
+<style>
+  :root{
+    --bg:#F2F6F7; --surface:#FFFFFF; --surface-2:#E8EFF0;
+    --border:#D7E0E1; --line:#C7D3D5;
+    --ink:#132226; --ink-soft:#4E6266; --ink-mute:#84959A;
+    --accent:#0E8E92; --accent-ink:#0A6D71; --accent-bg:#E2F3F3;
+    --ok:#1F8A4C; --ok-bg:#E3F4EA; --warn:#B26A00; --warn-bg:#FFF2DC; --bad:#B3261E; --bad-bg:#FBE6E4;
+    --font-display:"Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",sans-serif;
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono","Roboto Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0A1416; --surface:#101C1F; --surface-2:#152428;
+      --border:#22363A; --line:#2A3F43;
+      --ink:#E6EFEF; --ink-soft:#A9BDBF; --ink-mute:#748688;
+      --accent:#3FD1CC; --accent-ink:#6FE3DE; --accent-bg:#123333;
+      --ok:#5BD08A; --ok-bg:#12301F; --warn:#F2B451; --warn-bg:#33270F; --bad:#FF8A80; --bad-bg:#3A1714;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0A1416; --surface:#101C1F; --surface-2:#152428;
+    --border:#22363A; --line:#2A3F43;
+    --ink:#E6EFEF; --ink-soft:#A9BDBF; --ink-mute:#748688;
+    --accent:#3FD1CC; --accent-ink:#6FE3DE; --accent-bg:#123333;
+    --ok:#5BD08A; --ok-bg:#12301F; --warn:#F2B451; --warn-bg:#33270F; --bad:#FF8A80; --bad-bg:#3A1714;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-body); line-height:1.5; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px; margin:0 auto; padding:0 16px 64px;}
+  .eyebrow{font-family:var(--font-display); font-weight:700; text-transform:uppercase; letter-spacing:.14em; font-size:.72rem; color:var(--accent-ink);}
+  h1{font-family:var(--font-display); font-weight:700; font-size:2.1rem; margin:4px 0 0; letter-spacing:-.01em;}
+  header{padding:36px 0 20px; border-bottom:1px solid var(--border);}
+  .sub{color:var(--ink-soft); margin-top:8px; max-width:60ch;}
+  .status{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; font-size:.85rem;}
+  .pill{padding:4px 10px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft); font-family:var(--font-mono);}
+  .pill.on{background:var(--ok-bg); color:var(--ok);}
+  .pill.off{background:var(--bad-bg); color:var(--bad);}
+  .how{margin:20px 0 4px; padding:14px 16px; background:var(--accent-bg); border-radius:10px; color:var(--ink); font-size:.92rem;}
+  .how ol{margin:6px 0 0; padding-left:20px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:20px;}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px;}
+  .card.listening{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg);}
+  .card .top{display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .card .name{font-weight:650;}
+  .card .state{font-size:.75rem; font-family:var(--font-mono); padding:2px 8px; border-radius:999px; white-space:nowrap;}
+  .state.new{background:var(--surface-2); color:var(--ink-mute);}
+  .state.ok{background:var(--ok-bg); color:var(--ok);}
+  .state.wait{background:var(--warn-bg); color:var(--warn);}
+  .card .code{font-family:var(--font-mono); font-size:.72rem; color:var(--ink-mute); word-break:break-all;}
+  .card .code:empty{display:none;}
+  .card .top{flex-wrap:wrap;}
+  .row{display:flex; gap:8px;}
+  button{font:inherit; font-size:.9rem; padding:9px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer; flex:1; min-height:40px;}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  :root[data-theme="dark"] button.primary{color:#062224;}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) button.primary{color:#062224;} }
+  button:disabled{opacity:.45; cursor:default;}
+  button.link{flex:0; background:none; border:none; color:var(--ink-mute); padding:4px; min-height:auto; font-size:.8rem;}
+  button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  h2.group{font-family:var(--font-display); font-size:1.15rem; margin:28px 0 0; display:flex; justify-content:space-between; align-items:baseline; gap:8px; border-bottom:1px solid var(--border); padding-bottom:6px;}
+  h2.group .count{font-family:var(--font-mono); font-size:.75rem; font-weight:400; color:var(--ink-mute);}
+  .grid{margin-top:12px;}
+  .add{display:flex; gap:8px; margin-top:16px;}
+  .add input{flex:1; font:inherit; padding:9px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); min-width:0;}
+  .toast{position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:10px; font-size:.9rem; opacity:0; transition:opacity .2s; pointer-events:none; max-width:calc(100% - 32px);}
+  .toast.show{opacity:1;}
+  footer{margin-top:32px; color:var(--ink-mute); font-size:.8rem;}
+  footer code{font-family:var(--font-mono);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">OakRemote · Tasmota IR</div>
+    <h1>Home Theatre Remote</h1>
+    <p class="sub">Teach the blaster each button from the original remote, then test it. Codes are saved on the web server and sent through the OakRemote.</p>
+    <div class="status" id="status"><span class="pill">checking blaster…</span></div>
+    <div class="how">
+      <strong>To learn a button</strong>
+      <ol>
+        <li>Tap <b>Learn</b> on the card.</li>
+        <li>Within 20 seconds, point the original remote at the blaster (about 30&nbsp;cm) and press that button once.</li>
+        <li>The card turns green when the code is captured. Tap <b>Test</b> to send it.</li>
+      </ol>
+    </div>
+  </header>
+
+  <div id="grid"></div>
+
+  <div class="add">
+    <input id="newname" placeholder="Add another button (e.g. Input, Bass +)" maxlength="40" aria-label="New button name">
+    <button id="addbtn" style="flex:0 0 auto">Add</button>
+  </div>
+
+  <footer>Learned codes are stored by <code>oak.php</code> (see <code>STORE</code> there).</footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const GROUPS = [
+  ['Power',      ['Power On','Power Off','Power Toggle']],
+  ['Volume',     ['Volume Up','Volume Down','Mute','Unmute']],
+  ['Source',     ['Input / Source','DVD','FM / Tuner','AUX','USB','Channel Up','Channel Down']],
+  ['Playback',   ['Play / Pause','Stop','Previous','Next','Rewind','Fast Forward','Open / Close']],
+  ['Navigation', ['Up','Down','Left','Right','OK / Enter','Menu','Return','Setup']],
+  ['Sound',      ['Sound Mode','Bass +','Bass −','Treble +','Treble −','Subtitle','Audio']],
+];
+const DEFAULTS = GROUPS.flatMap(g => g[1]);
+const API = 'oak.php';
+let codes = {};
+let extra = [];
+let listening = null;   // name of the card currently learning
+
+const $ = s => document.querySelector(s);
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600); }
+
+async function api(a, body){
+  const opt = body ? {method:'POST', body:new URLSearchParams({a, ...body})} : {};
+  const r = await fetch(body ? API : `${API}?a=${a}`, opt);
+  const j = await r.json().catch(()=>({error:'bad response'}));
+  if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+
+function names(){
+  const all = [...DEFAULTS, ...extra, ...Object.keys(codes)];
+  return [...new Set(all)];
+}
+
+function render(){
+  const root = $('#grid'); root.innerHTML = '';
+  const custom = names().filter(n => !DEFAULTS.includes(n));
+  for (const [title, list] of [...GROUPS, ...(custom.length ? [['Custom', custom]] : [])]){
+    const h = document.createElement('h2'); h.className = 'group';
+    const done = list.filter(n => codes[n]).length;
+    h.innerHTML = `<span></span><span class="count">${done}/${list.length} learned</span>`;
+    h.firstChild.textContent = title; root.appendChild(h);
+    const g = document.createElement('div'); g.className = 'grid'; root.appendChild(g);
+  for (const n of list){
+    const c = codes[n];
+    const card = document.createElement('div');
+    card.className = 'card' + (listening===n ? ' listening' : '');
+    const state = listening===n ? '<span class="state wait">listening…</span>'
+                : c ? '<span class="state ok">learned</span>' : '<span class="state new">not learned</span>';
+    card.innerHTML = `
+      <div class="top"><span class="name"></span>${state}</div>
+      <div class="code"></div>
+      <div class="row">
+        <button class="primary learn">${listening===n ? 'Cancel' : (c ? 'Re-learn' : 'Learn')}</button>
+        <button class="test" ${c ? '' : 'disabled'}>Test</button>
+      </div>
+      ${c && !DEFAULTS.includes(n) || (!c && extra.includes(n)) ? '<button class="link del">remove</button>' : ''}`;
+    card.querySelector('.name').textContent = n;
+    card.querySelector('.code').textContent = c ? `${c.protocol || 'RAW'} · ${c.send.length > 60 ? c.send.slice(0,60)+'…' : c.send}` : '';
+    card.querySelector('.learn').onclick = () => listening===n ? (listening=null, render()) : learn(n);
+    card.querySelector('.test').onclick = () => test(n);
+    const del = card.querySelector('.del'); if (del) del.onclick = () => remove(n);
+    for (const b of card.querySelectorAll('.learn')) if (listening && listening!==n) b.disabled = true;
+    g.appendChild(card);
+  }
+  }
+}
+
+async function learn(n){
+  listening = n; render();
+  try{
+    let {i} = await api('listen&i=0');
+    const until = Date.now() + 20000;
+    while (listening===n && Date.now() < until){
+      await new Promise(r=>setTimeout(r,700));
+      const res = await api(`listen&i=${i}`);
+      i = res.i;
+      if (res.codes.length){
+        const got = res.codes[res.codes.length-1];
+        await api('save', {name:n, send:got.send, protocol:got.protocol});
+        codes = await api('codes');
+        listening = null; render();
+        toast(`Learned “${n}” (${got.protocol}${got.bits ? ', '+got.bits+' bits' : ''})`);
+        return;
+      }
+    }
+    if (listening===n) toast(`Nothing received for “${n}”. Try again, closer to the blaster.`);
+  }catch(e){ toast(`Learning failed: ${e.message}`); }
+  if (listening===n) listening = null;
+  render();
+}
+
+async function test(n){
+  try{ await api('send', {name:n}); toast(`Sent “${n}”`); }
+  catch(e){ toast(`Send failed: ${e.message}`); }
+}
+
+async function remove(n){
+  if (codes[n]){ try{ await api('delete', {name:n}); codes = await api('codes'); }catch(e){ toast(e.message); return; } }
+  extra = extra.filter(x=>x!==n); saveExtra(); render();
+}
+
+function saveExtra(){ try{ localStorage.setItem('oak-extra', JSON.stringify(extra)); }catch(e){} }
+try{ extra = JSON.parse(localStorage.getItem('oak-extra')||'[]'); }catch(e){ extra = []; }
+
+$('#addbtn').onclick = () => {
+  const v = $('#newname').value.trim();
+  if (!v) return;
+  if (!names().includes(v)){ extra.push(v); saveExtra(); }
+  $('#newname').value = ''; render();
+};
+$('#newname').addEventListener('keydown', e => { if (e.key==='Enter') $('#addbtn').click(); });
+
+async function status(){
+  try{
+    const s = await api('status');
+    $('#status').innerHTML = s.online
+      ? `<span class="pill on">blaster online</span><span class="pill">${s.ip}</span><span class="pill">wifi ${s.signal} dBm</span><span class="pill">up ${s.uptime}</span>`
+      : '<span class="pill off">blaster offline</span>';
+  }catch(e){ $('#status').innerHTML = '<span class="pill off">blaster offline</span>'; }
+}
+
+(async () => {
+  try{ codes = await api('codes'); }catch(e){ toast('Could not load saved codes'); }
+  render(); status(); setInterval(status, 30000);
+})();
+</script>
+</body>
+</html>

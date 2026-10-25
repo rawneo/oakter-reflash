@@ -1,0 +1,32 @@
+# Paste into the Tasmota console, one block at a time.
+# Needs the STANDARD tasmota build (tasmota-ir has no Alexa emulation) - see README.
+# Codes below are for a Nakamichi home theatre (NEC address 0x04FB); learn your own
+# with the IR receiver (they show up as IrReceived in the console) and swap them in.
+
+# 1. Template with 5 virtual relays on unused pins (nothing is wired to them)
+Template {"NAME":"OakRemote IR","GPIO":[225,224,226,0,320,1088,0,0,228,32,1056,0,227,0],"FLAG":0,"BASE":62}
+Module 0
+
+# 2. Alexa (Hue emulation) + device names. Avoid "volume" in names: Alexa treats it
+#    as a speaker command, and a device called "Home Theatre" hijacks those phrases.
+Backlog Emulation 2; FriendlyName1 HT Power; FriendlyName2 HT Vol Up; FriendlyName3 HT Vol Down; FriendlyName4 HT Aux; FriendlyName5 HT Vol Max
+
+# 3. Relays 2-5 switch themselves off after 2 s. At 0.1 s Alexa sees the device
+#    already off and says "sorry, the device is not responding".
+Backlog PulseTime2 20; PulseTime3 20; PulseTime4 20; PulseTime5 20; PowerOnState 0
+
+# 4. Blue LED blinks on every IR sent or received
+Backlog SetOption58 1; LedState 0
+Rule1 ON IRSend DO Backlog LedPower 1; Delay 3; LedPower 0 ENDON ON IrReceived DO Backlog LedPower 1; Delay 3; LedPower 0 ENDON
+Rule1 1
+
+# 5. Power on = power, wait 6 s, pick AUX input, hold Vol+ ~14 s to max. Off = power.
+#    Plus single-shot AUX and Vol Max.
+Rule2 ON Power1#State=1 DO Backlog IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FB7887"}; Delay 60; IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FBF807"}; Delay 10; IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FBC23D","Repeat":125} ENDON ON Power1#State=0 DO IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FB7887"} ENDON ON Power4#State=1 DO IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FBF807"} ENDON ON Power5#State=1 DO IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FBC23D","Repeat":125} ENDON
+Rule2 1
+
+# 6. Volume up / down = 3 steps each
+Rule3 ON Power2#State=1 DO Backlog IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FBC23D"}; Delay 3; IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FBC23D"}; Delay 3; IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FBC23D"} ENDON ON Power3#State=1 DO Backlog IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FB7A85"}; Delay 3; IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FB7A85"}; Delay 3; IRsend {"Protocol":"NEC","Bits":32,"Data":"0x04FB7A85"} ENDON
+Rule3 1
+
+# Then: Alexa app -> Devices -> + -> Add device -> Other / "Discover devices".

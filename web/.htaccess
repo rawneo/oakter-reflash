@@ -1,0 +1,3 @@
+# oak.php can fire IR commands at your TV/receiver. Keep it on your LAN.
+# (Apache 2.4; adjust the subnet. On nginx use allow/deny in the location block.)
+Require ip 192.168.0.0/16 127.0.0.1
